@@ -135,6 +135,18 @@ def analyze_stock(
             if market_cap and fcf:
                 fcf_yield = (fcf / market_cap) * 100
 
+        # Safe Free Cash Flow Calculation
+fcf_yield = None
+try:
+    if cash_flow is not None and not cash_flow.empty:
+        ocf = cash_flow.iloc[:, 0].get("Operating Cash Flow", 0)
+        capex = cash_flow.iloc[:, 0].get("Capital Expenditures", 0)
+        fcf = ocf + capex
+        if market_cap and fcf:
+            fcf_yield = (fcf / market_cap) * 100
+except Exception:
+    fcf_yield = None
+
         # Scoring Logic (Max score = 6)
         score = 0
         if pe_ratio and 0 < pe_ratio <= max_pe:
