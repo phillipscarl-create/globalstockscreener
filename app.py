@@ -31,8 +31,9 @@ def get_sp500_tickers():
 @st.cache_data(ttl=86400)
 @st.cache_data(ttl=86400)
 @st.cache_data(ttl=86400)
+@st.cache_data(ttl=86400)
 def get_ftse100_tickers():
-    """Fetches FTSE 100 tickers safely with a fallback hardcoded list if Wikipedia fails."""
+    """Scrapes FTSE 100 tickers directly from Wikipedia's constituents table."""
     url = "https://en.wikipedia.org/wiki/FTSE_100_Index"
     headers = {
         "User-Agent": (
@@ -44,45 +45,28 @@ def get_ftse100_tickers():
 
     try:
         response = requests.get(url, headers=headers, timeout=10)
-        payload = pd.read_html(io.StringIO(response.text))
+        # Match table containing the 'EPIC' column header specifically
+        tables = pd.read_html(io.StringIO(response.text), match="EPIC")
 
-        # Search through all parsed tables to find the table with tickers
-        ftse_table = None
-        for table in payload:
-            # Look for common FTSE column names across Wikipedia revisions
-            cols = [str(c).lower() for c in table.columns]
-            if any(
-                k in cols
-                for k in ["epic", "ticker", "ticker symbol", "symbol", "company"]
-            ):
-                ftse_table = table
-                break
+        if tables:
+            df = tables[0]
+            # Ensure we read string values from the EPIC ticker column
+            raw_tickers = df["EPIC"].astype(str).tolist()
 
-        if ftse_table is not None:
-            # Find the specific column containing the ticker symbols
-            ticker_col = None
-            for c in ftse_table.columns:
-                if str(c).lower() in ["epic", "ticker", "ticker symbol", "symbol"]:
-                    ticker_col = c
-                    break
+            clean_tickers = []
+            for t in raw_tickers:
+                # Remove spaces, quotes, and trailing non-alphanumeric chars
+                t_clean = "".join(c for c in t if c.isalnum()).upper()
+                if t_clean and not t_clean.isdigit():
+                    clean_tickers.append(f"{t_clean}.L")
 
-            if ticker_col is not None:
-                raw_tickers = ftse_table[ticker_col].astype(str).tolist()
-                clean_tickers = []
-                for t in raw_tickers:
-                    # Clean spacing and ensure correct format for Yahoo Finance
-                    t_clean = t.strip().upper().replace(".", "-")
-                    if t_clean and t_clean != "NAN":
-                        if not t_clean.endswith(".L"):
-                            t_clean = f"{t_clean}.L"
-                        clean_tickers.append(t_clean)
-                if len(clean_tickers) > 50:
-                    return clean_tickers
+            if len(clean_tickers) >= 50:
+                return clean_tickers
     except Exception as e:
-        print(f"Wikipedia fetch failed: {e}")
+        print(f"FTSE Scrape failed: {e}")
 
-    # FALLBACK LIST: Top FTSE 100 blue-chips if Wikipedia scraping fails
-    fallback_ftse = [
+    # Fallback list of top UK constituents if scraping fails
+    return [
         "SHEL.L",
         "AZN.L",
         "HSBA.L",
@@ -101,12 +85,9 @@ def get_ftse100_tickers():
         "VOD.L",
         "NG.L",
         "TSCO.L",
-        "CRH.L",
-        "ABDN.L",
+        "NWG.L",
+        "3IN.L",
     ]
-    return fallback_ftse
-def analyze_stock(
-    ticker_symbol, max_pe, max_pb, max_de, min_cr, min_fcf, min_roe
 ):
     """Analyzes value and quality metrics for a stock, handling missing data gracefully."""
     ticker = yf.Ticker(ticker_symbol)
