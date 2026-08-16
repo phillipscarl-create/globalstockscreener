@@ -29,9 +29,6 @@ def get_sp500_tickers():
 
 
 @st.cache_data(ttl=86400)
-@st.cache_data(ttl=86400)
-@st.cache_data(ttl=86400)
-@st.cache_data(ttl=86400)
 def get_ftse100_tickers():
     """Scrapes FTSE 100 tickers directly from Wikipedia's constituents table."""
     url = "https://en.wikipedia.org/wiki/FTSE_100_Index"
@@ -45,17 +42,14 @@ def get_ftse100_tickers():
 
     try:
         response = requests.get(url, headers=headers, timeout=10)
-        # Match table containing the 'EPIC' column header specifically
         tables = pd.read_html(io.StringIO(response.text), match="EPIC")
 
         if tables:
             df = tables[0]
-            # Ensure we read string values from the EPIC ticker column
             raw_tickers = df["EPIC"].astype(str).tolist()
 
             clean_tickers = []
             for t in raw_tickers:
-                # Remove spaces, quotes, and trailing non-alphanumeric chars
                 t_clean = "".join(c for c in t if c.isalnum()).upper()
                 if t_clean and not t_clean.isdigit():
                     clean_tickers.append(f"{t_clean}.L")
@@ -88,13 +82,17 @@ def get_ftse100_tickers():
         "NWG.L",
         "3IN.L",
     ]
+
+
+def analyze_stock(
+    ticker_symbol, max_pe, max_pb, max_de, min_cr, min_fcf, min_roe
 ):
-    """Analyzes value and quality metrics for a stock, handling missing data gracefully."""
+    """Analyzes value and quality metrics for a stock."""
     ticker = yf.Ticker(ticker_symbol)
     try:
         info = ticker.info
         if not info or "shortName" not in info:
-            return None  # Skip invalid/unresponsive tickers
+            return None
 
         cash_flow = ticker.cashflow
 
@@ -109,14 +107,12 @@ def get_ftse100_tickers():
         current_ratio = info.get("currentRatio", None)
         market_cap = info.get("marketCap", None)
         company_name = info.get("shortName", ticker_symbol)
-
         roe = info.get("returnOnEquity", None)
 
         # Calculate Free Cash Flow Yield safely
         fcf_yield = None
         try:
             if cash_flow is not None and not cash_flow.empty:
-                # Handle varying field names in yfinance
                 ocf = 0
                 capex = 0
                 if "Operating Cash Flow" in cash_flow.index:
@@ -129,7 +125,7 @@ def get_ftse100_tickers():
                 if "Capital Expenditures" in cash_flow.index:
                     capex = cash_flow.loc["Capital Expenditures"].iloc[0]
 
-                fcf = ocf + capex  # capex is usually negative in yfinance
+                fcf = ocf + capex
                 if market_cap and fcf:
                     fcf_yield = (fcf / market_cap) * 100
         except Exception:
@@ -168,57 +164,6 @@ def get_ftse100_tickers():
         print(f"Error analyzing {ticker_symbol}: {e}")
         return None
 
-        # Calculate Free Cash Flow Yield
-        fcf_yield = None
-        if not cash_flow.empty:
-            ocf = cash_flow.iloc[:, 0].get("Operating Cash Flow", 0)
-            capex = cash_flow.iloc[:, 0].get("Capital Expenditures", 0)
-            fcf = ocf + capex
-            if market_cap and fcf:
-                fcf_yield = (fcf / market_cap) * 100
-
-        # Safe Free Cash Flow Calculation
-fcf_yield = None
-try:
-    if cash_flow is not None and not cash_flow.empty:
-        ocf = cash_flow.iloc[:, 0].get("Operating Cash Flow", 0)
-        capex = cash_flow.iloc[:, 0].get("Capital Expenditures", 0)
-        fcf = ocf + capex
-        if market_cap and fcf:
-            fcf_yield = (fcf / market_cap) * 100
-except Exception:
-    fcf_yield = None
-
-        # Scoring Logic (Max score = 6)
-        score = 0
-        if pe_ratio and 0 < pe_ratio <= max_pe:
-            score += 1
-        if pb_ratio and 0 < pb_ratio <= max_pb:
-            score += 1
-        if debt_to_equity is not None and debt_to_equity <= max_de:
-            score += 1
-        if current_ratio and current_ratio >= min_cr:
-            score += 1
-        if fcf_yield and fcf_yield >= min_fcf:
-            score += 1
-        if roe and roe >= (min_roe / 100):
-            score += 1
-
-        return {
-            "Ticker": ticker_symbol,
-            "Name": company_name,
-            "P/E Ratio": round(pe_ratio, 2) if pe_ratio else None,
-            "P/B Ratio": round(pb_ratio, 2) if pb_ratio else None,
-            "Debt/Equity": round(debt_to_equity, 2) if debt_to_equity else None,
-            "Current Ratio": round(current_ratio, 2) if current_ratio else None,
-            "FCF Yield (%)": round(fcf_yield, 2) if fcf_yield else None,
-            "ROE (%)": round(roe * 100, 2) if roe else None,
-            "Value Score": f"{score}/6",
-            "Raw Score": score,
-        }
-    except Exception:
-        return None
-
 
 # --- APP NAVIGATION TABS ---
 tab1, tab2 = st.tabs(["🔍 Value & Quality Screener", "🏛️ Superinvestor Tracker"])
@@ -237,10 +182,10 @@ with tab1:
     max_pe = st.sidebar.slider("Max P/E Ratio", 5.0, 40.0, 20.0)
     max_pb = st.sidebar.slider("Max P/B Ratio", 0.5, 5.0, 2.0)
     max_de = st.sidebar.slider("Max Debt-to-Equity", 0.1, 3.0, 1.0)
-    min_cr = st.sidebar.slider("Min Current Ratio", 0.5, 3.0, 1.5)
-    min_fcf = st.sidebar.slider("Min FCF Yield (%)", 0.0, 15.0, 5.0)
+    min_cr = st.sidebar.slider("Min Current Ratio", 0.5, 3.0, 1.0)
+    min_fcf = st.sidebar.slider("Min FCF Yield (%)", 0.0, 15.0, 3.0)
     min_roe = st.sidebar.slider(
-        "Min ROE / Capital Efficiency (%)", 0.0, 30.0, 15.0
+        "Min ROE / Capital Efficiency (%)", 0.0, 30.0, 10.0
     )
 
     if st.button("🚀 Run Market Scanner"):
@@ -350,7 +295,6 @@ with tab2:
 
     if news:
         for article in news[:5]:
-            # Handles different news format outputs from yfinance
             title = article.get("title", article.get("headline", "Article"))
             link = article.get("link", article.get("url", "#"))
             publisher = article.get(
