@@ -5,9 +5,87 @@ import requests
 import streamlit as st
 import yfinance as yf
 
-# Page setup
-st.set_page_config(page_title="Global Equity Investment Model", layout="wide")
-st.title("📈 Global Equity Investment & Superinvestor Dashboard")
+# Page setup & Configuration
+st.set_page_config(
+    page_title="Global Equity Investment & Superinvestor Dashboard",
+    page_icon="📈",
+    layout="wide",
+)
+
+# Custom CSS for UI/UX Design Enhancement
+st.markdown(
+    """
+    <style>
+    /* Global Dashboard Styling */
+    .stApp {
+        background-color: #0f172a;
+        color: #f8fafc;
+    }
+    
+    /* Header & Typography */
+    h1, h2, h3 {
+        color: #38bdf8 !important;
+        font-family: 'Inter', sans-serif;
+        font-weight: 700;
+    }
+    
+    /* Custom Info Box Card */
+    .user-guide-box {
+        background-color: #1e293b;
+        border-left: 4px solid #38bdf8;
+        padding: 20px;
+        border-radius: 8px;
+        margin-bottom: 25px;
+    }
+    
+    /* Insight Card Styling */
+    .reasoning-card {
+        background-color: #1e293b;
+        border: 1px solid #334155;
+        border-radius: 10px;
+        padding: 16px;
+        margin-bottom: 15px;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+    }
+    
+    .badge-perfect {
+        background-color: #16a34a;
+        color: white;
+        padding: 4px 10px;
+        border-radius: 6px;
+        font-weight: bold;
+        font-size: 0.85rem;
+    }
+    
+    .badge-high {
+        background-color: #0284c7;
+        color: white;
+        padding: 4px 10px;
+        border-radius: 6px;
+        font-weight: bold;
+        font-size: 0.85rem;
+    }
+
+    /* Primary Buttons */
+    .stButton>button {
+        background: linear-gradient(135deg, #0284c7 0%, #2563eb 100%);
+        color: white;
+        font-weight: bold;
+        border-radius: 8px;
+        border: none;
+        padding: 0.6rem 1.2rem;
+        transition: all 0.3s ease;
+    }
+    .stButton>button:hover {
+        background: linear-gradient(135deg, #0369a1 0%, #1d4ed8 100%);
+        box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
+    }
+    </style>
+    """,
+    unsafe_allow_html=True,
+)
+
+st.title("📈 Global Equity Investment Model & Institutional Dashboard")
 
 
 # --- DATA FETCHING FUNCTIONS ---
@@ -19,7 +97,7 @@ def get_sp500_tickers():
         "User-Agent": (
             "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
             "AppleWebKit/537.36 (KHTML, like Gecko) "
-            "Chrome/115.0.0.0 Safari/537.36"
+            "Chrome/120.0.0.0 Safari/537.36"
         )
     }
     response = requests.get(url, headers=headers)
@@ -59,7 +137,7 @@ def get_ftse100_tickers():
     except Exception as e:
         print(f"FTSE Scrape failed: {e}")
 
-    # Fallback list of top UK constituents if scraping fails
+    # Fallback list of top UK constituents
     return [
         "SHEL.L",
         "AZN.L",
@@ -87,7 +165,7 @@ def get_ftse100_tickers():
 def analyze_stock(
     ticker_symbol, max_pe, max_pb, max_de, min_cr, min_fcf, min_roe
 ):
-    """Analyzes value and quality metrics for a stock."""
+    """Analyzes value and quality metrics for a stock and logs key drivers."""
     ticker = yf.Ticker(ticker_symbol)
     try:
         info = ticker.info
@@ -131,20 +209,40 @@ def analyze_stock(
         except Exception:
             fcf_yield = None
 
-        # Scoring Logic (Max = 6)
+        # Scoring Logic & Drivers Breakdown
         score = 0
+        reasons = []
+
         if pe_ratio and 0 < pe_ratio <= max_pe:
             score += 1
+            reasons.append(
+                f"Attractive valuation with P/E of {pe_ratio:.2f} (≤ {max_pe:.1f})"
+            )
         if pb_ratio and 0 < pb_ratio <= max_pb:
             score += 1
+            reasons.append(
+                f"Solid asset cover with P/B of {pb_ratio:.2f} (≤ {max_pb:.1f})"
+            )
         if debt_to_equity is not None and debt_to_equity <= max_de:
             score += 1
+            reasons.append(
+                f"Low financial leverage with D/E of {debt_to_equity:.2f} (≤ {max_de:.1f})"
+            )
         if current_ratio and current_ratio >= min_cr:
             score += 1
+            reasons.append(
+                f"Healthy short-term liquidity with Current Ratio of {current_ratio:.2f} (≥ {min_cr:.1f})"
+            )
         if fcf_yield and fcf_yield >= min_fcf:
             score += 1
+            reasons.append(
+                f"Strong cash generation with FCF Yield of {fcf_yield:.2f}% (≥ {min_fcf:.1f}%)"
+            )
         if roe and roe >= (min_roe / 100):
             score += 1
+            reasons.append(
+                f"High capital efficiency with ROE of {roe*100:.2f}% (≥ {min_roe:.1f}%)"
+            )
 
         return {
             "Ticker": ticker_symbol,
@@ -159,6 +257,7 @@ def analyze_stock(
             "ROE (%)": round(roe * 100, 2) if roe else "N/A",
             "Value Score": f"{score}/6",
             "Raw Score": score,
+            "Reasons": reasons,
         }
     except Exception as e:
         print(f"Error analyzing {ticker_symbol}: {e}")
@@ -170,6 +269,27 @@ tab1, tab2 = st.tabs(["🔍 Value & Quality Screener", "🏛️ Superinvestor Tr
 
 # ================= TAB 1: SCREENER =================
 with tab1:
+    # 1. Landing Page Overview & User Guide
+    st.markdown(
+        """
+        <div class="user-guide-box">
+            <h3>📖 Model Overview & User Guide</h3>
+            <p>This stock picking model scans broad equity market indices (S&P 500 & FTSE 100) to identify high-quality compounders trading at reasonable valuations. It combines classic Benjamin Graham deep-value metrics with Warren Buffett quality factors to score companies out of <b>6 total points</b>.</p>
+            <hr style="border-color: #334155; margin: 12px 0;">
+            <h4><b>Factor Definitions & Model Thresholds:</b></h4>
+            <ul>
+                <li><b>P/E Ratio (Price-to-Earnings):</b> Measures how much you pay for $1 of earnings. Lower values suggest better value.</li>
+                <li><b>P/B Ratio (Price-to-Book):</b> Compares stock price to net asset value per share. Filters out overinflated assets.</li>
+                <li><b>Debt-to-Equity (D/E):</b> Measures long-term financial solvency. Lower leverage protects companies during downturns.</li>
+                <li><b>Current Ratio:</b> Short-term liquid assets divided by short-term liabilities. Values &gt; 1.0 ensure short-term solvency.</li>
+                <li><b>FCF Yield (Free Cash Flow Yield):</b> Real cash generated per share divided by price. High cash yield drives dividends & buybacks.</li>
+                <li><b>ROE (Return on Equity):</b> Measures profitability on shareholder capital. Long-term stock compounders maintain ROE &gt; 15%.</li>
+            </ul>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+
     st.sidebar.header("1. Market Selection")
     market = st.sidebar.selectbox(
         "Choose Index", ["S&P 500 (US)", "FTSE 100 (UK)"]
@@ -206,19 +326,59 @@ with tab1:
             if res:
                 results.append(res)
             progress_bar.progress((i + 1) / len(tickers))
-            time.sleep(0.2)
+            time.sleep(0.1)
 
         status_text.text("Scan completed!")
 
         df = pd.DataFrame(results)
         if not df.empty:
-            df_sorted = df.sort_values(by="Raw Score", ascending=False).drop(
-                columns=["Raw Score"]
-            )
-            st.subheader("📊 Model Scan Results")
-            st.dataframe(df_sorted, use_container_width=True)
+            df_sorted = df.sort_values(by="Raw Score", ascending=False)
 
-            csv = df_sorted.to_csv(index=False).encode("utf-8")
+            # Display Data Table
+            st.subheader("📊 Model Scan Results")
+            display_df = df_sorted.drop(columns=["Raw Score", "Reasons"])
+            st.dataframe(display_df, use_container_width=True)
+
+            # 2. Top-Rated Stock Insights & Score Reasoning Section
+            top_performers = [r for r in results if r["Raw Score"] >= 5]
+
+            st.subheader("🏆 Top Candidate Reasoning & Breakdown")
+            if top_performers:
+                for stock in sorted(
+                    top_performers, key=lambda x: x["Raw Score"], reverse=True
+                ):
+                    badge_class = (
+                        "badge-perfect"
+                        if stock["Raw Score"] == 6
+                        else "badge-high"
+                    )
+                    badge_label = (
+                        "PERFECT MATCH (6/6)"
+                        if stock["Raw Score"] == 6
+                        else "HIGH CONVICTION (5/6)"
+                    )
+
+                    st.markdown(
+                        f"""
+                        <div class="reasoning-card">
+                            <div style="display:flex; justify-shadow:space-between; align-items:center;">
+                                <h4><b>{stock['Name']} ({stock['Ticker']})</b></h4>
+                                <span class="{badge_class}">{badge_label}</span>
+                            </div>
+                            <p style="color:#94a3b8; font-size:0.9rem; margin-top:5px;"><b>Key Value Drivers & Strengths:</b></p>
+                            <ul>
+                                {"".join([f"<li>{r}</li>" for r in stock['Reasons']])}
+                            </ul>
+                        </div>
+                        """,
+                        unsafe_allow_html=True,
+                    )
+            else:
+                st.info(
+                    "No stocks scored 5/6 or 6/6 under the current threshold settings. Try loosening the model criteria in the sidebar."
+                )
+
+            csv = display_df.to_csv(index=False).encode("utf-8")
             st.download_button(
                 label="📥 Download Results as CSV",
                 data=csv,
