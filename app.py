@@ -108,15 +108,19 @@ def get_ftse100_tickers():
 def analyze_stock(
     ticker_symbol, max_pe, max_pb, max_de, min_cr, min_fcf, min_roe
 ):
-    """Analyzes value and quality compounding metrics for a stock."""
+    """Analyzes value and quality metrics for a stock, handling missing data gracefully."""
     ticker = yf.Ticker(ticker_symbol)
     try:
         info = ticker.info
+        if not info or "shortName" not in info:
+            return None  # Skip invalid/unresponsive tickers
+
         cash_flow = ticker.cashflow
 
-        # Extract Metrics
+        # Extract Metrics safely
         pe_ratio = info.get("trailingPE", None)
         pb_ratio = info.get("priceToBook", None)
+
         debt_to_equity = info.get("debtToEquity", None)
         if debt_to_equity is not None:
             debt_to_equity = debt_to_equity / 100
@@ -124,7 +128,64 @@ def analyze_stock(
         current_ratio = info.get("currentRatio", None)
         market_cap = info.get("marketCap", None)
         company_name = info.get("shortName", ticker_symbol)
+
         roe = info.get("returnOnEquity", None)
+
+        # Calculate Free Cash Flow Yield safely
+        fcf_yield = None
+        try:
+            if cash_flow is not None and not cash_flow.empty:
+                # Handle varying field names in yfinance
+                ocf = 0
+                capex = 0
+                if "Operating Cash Flow" in cash_flow.index:
+                    ocf = cash_flow.loc["Operating Cash Flow"].iloc[0]
+                elif "Total Cash From Operating Activities" in cash_flow.index:
+                    ocf = cash_flow.loc[
+                        "Total Cash From Operating Activities"
+                    ].iloc[0]
+
+                if "Capital Expenditures" in cash_flow.index:
+                    capex = cash_flow.loc["Capital Expenditures"].iloc[0]
+
+                fcf = ocf + capex  # capex is usually negative in yfinance
+                if market_cap and fcf:
+                    fcf_yield = (fcf / market_cap) * 100
+        except Exception:
+            fcf_yield = None
+
+        # Scoring Logic (Max = 6)
+        score = 0
+        if pe_ratio and 0 < pe_ratio <= max_pe:
+            score += 1
+        if pb_ratio and 0 < pb_ratio <= max_pb:
+            score += 1
+        if debt_to_equity is not None and debt_to_equity <= max_de:
+            score += 1
+        if current_ratio and current_ratio >= min_cr:
+            score += 1
+        if fcf_yield and fcf_yield >= min_fcf:
+            score += 1
+        if roe and roe >= (min_roe / 100):
+            score += 1
+
+        return {
+            "Ticker": ticker_symbol,
+            "Name": company_name,
+            "P/E Ratio": round(pe_ratio, 2) if pe_ratio else "N/A",
+            "P/B Ratio": round(pb_ratio, 2) if pb_ratio else "N/A",
+            "Debt/Equity": round(debt_to_equity, 2)
+            if debt_to_equity is not None
+            else "N/A",
+            "Current Ratio": round(current_ratio, 2) if current_ratio else "N/A",
+            "FCF Yield (%)": round(fcf_yield, 2) if fcf_yield else "N/A",
+            "ROE (%)": round(roe * 100, 2) if roe else "N/A",
+            "Value Score": f"{score}/6",
+            "Raw Score": score,
+        }
+    except Exception as e:
+        print(f"Error analyzing {ticker_symbol}: {e}")
+        return None
 
         # Calculate Free Cash Flow Yield
         fcf_yield = None
