@@ -30,12 +30,20 @@ st.markdown(
     .guide-card, .ui-card {
         background-color: #111827;
         border: 1px solid #1f2937;
-        padding: 20px;
+        padding: 24px;
         border-radius: 12px;
         margin-bottom: 20px;
         box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.4);
     }
     
+    .factor-box {
+        background: rgba(255, 255, 255, 0.02);
+        border: 1px solid #374151;
+        padding: 16px;
+        border-radius: 8px;
+        margin-bottom: 12px;
+    }
+
     .reasoning-card {
         background-color: #111827;
         border: 1px solid #38bdf8;
@@ -124,11 +132,10 @@ def get_ftse100_tickers():
 # --- ROBUST DATA FETCHING USING YFINANCE ---
 @st.cache_data(ttl=3600)
 def fetch_stock_metrics(ticker_symbol):
-    """Fetches key ticker metrics reliably via yfinance."""
     try:
         ticker = yf.Ticker(ticker_symbol)
         info = ticker.info
-        if not info or 'shortName' not in info and 'longName' not in info:
+        if not info or ('shortName' not in info and 'longName' not in info):
             return None
         return info
     except Exception:
@@ -137,7 +144,6 @@ def fetch_stock_metrics(ticker_symbol):
 
 @st.cache_data(ttl=1800)
 def fetch_ticker_rss_news(symbol):
-    """Fetches reliable ticker news via Google News RSS."""
     clean_symbol = symbol.replace(".L", "").replace("-", ".")
     rss_url = f"https://news.google.com/rss/search?q={clean_symbol}+stock&hl=en-US&gl=US&ceid=US:en"
     
@@ -215,29 +221,77 @@ def analyze_stock(ticker_symbol, max_pe, max_pb, max_de, min_cr, min_fcf, min_ro
 
 
 # --- APP DASHBOARD ---
-tab1, tab2 = st.tabs(["🔍 Value & Quality Screener", "🏛️ Superinvestor Tracker"])
+tab1, tab2 = st.tabs(["🔍 Quantitative Screener", "🏛️ Superinvestor Tracker"])
 
 # ================= TAB 1: SCREENER =================
 with tab1:
-    st.markdown(
-        """
-        <div class="guide-card">
-            <h3>📖 User Guide & Factor Definitions</h3>
-            <p style="color: #94a3b8;">
-                This quantitative model scans stock constituents against financial metrics, scoring companies from 0 to 6 based on your parameters.
-            </p>
-            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 10px; margin-top: 10px;">
-                <div style="background: rgba(255,255,255,0.03); padding: 8px 12px; border-radius: 6px;"><b>P/E Ratio:</b> Share price vs net earnings.</div>
-                <div style="background: rgba(255,255,255,0.03); padding: 8px 12px; border-radius: 6px;"><b>P/B Ratio:</b> Share price vs book asset value.</div>
-                <div style="background: rgba(255,255,255,0.03); padding: 8px 12px; border-radius: 6px;"><b>Debt/Equity:</b> Total debt divided by equity capital.</div>
-                <div style="background: rgba(255,255,255,0.03); padding: 8px 12px; border-radius: 6px;"><b>Current Ratio:</b> Short-term liquid assets vs liabilities.</div>
-                <div style="background: rgba(255,255,255,0.03); padding: 8px 12px; border-radius: 6px;"><b>FCF Yield:</b> Free cash flow produced relative to market cap.</div>
-                <div style="background: rgba(255,255,255,0.03); padding: 8px 12px; border-radius: 6px;"><b>ROE (%):</b> Annual return generated on shareholder equity.</div>
+    with st.expander("📖 EXPANDED USER GUIDE & ACADEMIC RESEARCH FRAMEWORK", expanded=True):
+        st.markdown(
+            """
+            <div class="guide-card">
+                <h3>System Architecture & Research Foundations</h3>
+                <p style="color: #94a3b8;">
+                    This quantitative engine ranks public companies using a multi-factor scoring algorithm (0 to 6). 
+                    Each factor isolates specific fundamental drivers proved by academic finance and value investing literature to deliver risk-adjusted alpha over full market cycles.
+                </p>
+                
+                <div class="factor-box">
+                    <h4>1. Price-to-Earnings Ratio (P/E) — Value Anomaly</h4>
+                    <p style="color: #cbd5e1; font-size: 0.88rem;">
+                        <b>Importance:</b> Evaluates valuation relative to bottom-line profitability.<br>
+                        <b>Academic Foundation:</b> Basu (1977, <i>Journal of Finance</i>) established the "P/E Anomaly," demonstrating that low P/E stocks consistently outperform high P/E stocks on a risk-adjusted basis.<br>
+                        <b>Threshold Logic:</b> Eliminates speculative growth equities trading at inflated multiples.
+                    </p>
+                </div>
+
+                <div class="factor-box">
+                    <h4>2. Price-to-Book Ratio (P/B) — The Fama-French Value Factor</h4>
+                    <p style="color: #cbd5e1; font-size: 0.88rem;">
+                        <b>Importance:</b> Compares market value directly against corporate net asset value.<br>
+                        <b>Academic Foundation:</b> Fama & French (1992, 1993, <i>Journal of Financial Economics</i>) introduced the High-Minus-Low (HML) factor, proving that low P/B equities systematically generate excess returns across global equities.<br>
+                        <b>Threshold Logic:</b> Filters for margin-of-safety asset protection inspired by Benjamin Graham's <i>Security Analysis</i>.
+                    </p>
+                </div>
+
+                <div class="factor-box">
+                    <h4>3. Debt-to-Equity Ratio (D/E) — Solvency & Insolvency Shield</h4>
+                    <p style="color: #cbd5e1; font-size: 0.88rem;">
+                        <b>Importance:</b> Measures long-term capital leverage and financial vulnerability.<br>
+                        <b>Academic Foundation:</b> Joseph Piotroski (2000, <i>Journal of Accounting Research</i>) integrated leverage trends into the F-Score, showing that leverage constraints eliminate value-traps and bankruptcy risk.<br>
+                        <b>Threshold Logic:</b> Shields portfolios from sudden rate increases and credit contraction.
+                    </p>
+                </div>
+
+                <div class="factor-box">
+                    <h4>4. Current Ratio — Liquidity & Operational Runway</h4>
+                    <p style="color: #cbd5e1; font-size: 0.88rem;">
+                        <b>Importance:</b> Short-term liquidity buffer (Current Assets ÷ Current Liabilities).<br>
+                        <b>Academic Foundation:</b> Standard credit rating models (Altman Z-Score) prioritize liquidity ratios above 1.0 to ensure short-term obligations do not force distressed equity dilution.<br>
+                        <b>Threshold Logic:</b> Confirms the business can comfortably service near-term debt without issuing equity.
+                    </p>
+                </div>
+
+                <div class="factor-box">
+                    <h4>5. Free Cash Flow (FCF) Yield — Pure Owner Earnings</h4>
+                    <p style="color: #cbd5e1; font-size: 0.88rem;">
+                        <b>Importance:</b> Real cash generated after capital expenditures divided by market capitalization.<br>
+                        <b>Academic Foundation:</b> Joel Greenblatt’s <i>Magic Formula</i> and Warren Buffett’s "Owner Earnings" framework emphasize that accrual accounting earnings can be manipulated, but cash flow cannot.<br>
+                        <b>Threshold Logic:</b> Selects companies generating tangible cash returns available for buybacks, dividends, or reinvestment.
+                    </p>
+                </div>
+
+                <div class="factor-box">
+                    <h4>6. Return on Equity (ROE) — Capital Efficiency & Moat</h4>
+                    <p style="color: #cbd5e1; font-size: 0.88rem;">
+                        <b>Importance:</b> Profitability generated per dollar of shareholder equity capital.<br>
+                        <b>Academic Foundation:</b> Novy-Marx (2013, <i>Journal of Financial Economics</i>) demonstrated that high-profitability/quality stocks generate significant alpha ("Quality-minus-Junk").<br>
+                        <b>Threshold Logic:</b> Identifies businesses possess persistent economic moats and pricing power.
+                    </p>
+                </div>
             </div>
-        </div>
-        """,
-        unsafe_allow_html=True,
-    )
+            """,
+            unsafe_allow_html=True,
+        )
 
     st.sidebar.header("1. Select Market Index")
     market = st.sidebar.selectbox("Market Index", ["S&P 500 (US)", "Nasdaq-100 (US Growth)", "Dow Jones (US)", "FTSE 100 (UK)"])
