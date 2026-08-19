@@ -107,8 +107,11 @@ try:
 
 except Exception as e:
     st.error(f"Could not load data for **{selected_ticker}**.")
-    st.info(
-        "**Note:** Free Alpha Vantage keys are limited to 25 requests per day / 5 requests per minute. "
-        "If you recently tested multiple symbols, wait a few minutes or try again tomorrow."
+    st.warning(
+        "**Possible Causes:**\n"
+        "1. **25 Calls/Day Limit:** Alpha Vantage free tier allows only 25 requests daily.\n"
+        "2. **Rate Limit:** More than 5 requests were sent in 1 minute.\n"
+        "3. **Key Error:** The API key is invalid or pending activation."
     )
-    st.caption(f"Error Details: {e}")
+    # Prints the actual technical detail from Alpha Vantage
+    st.code(f"Detailed Error: {e}")
