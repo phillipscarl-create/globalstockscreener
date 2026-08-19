@@ -1,5 +1,5 @@
 streamlit
 pandas
-polygon-api-client
 requests
+curl_cffi
 lxml
