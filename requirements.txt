@@ -1,5 +1,5 @@
 streamlit
 pandas
-alpha-vantage
+polygon-api-client
 requests
 lxml
