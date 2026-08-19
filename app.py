@@ -2,10 +2,18 @@ import io
 import requests
 import pandas as pd
 import streamlit as st
+from alpha_vantage.timeseries import TimeSeries
 
 # --- PAGE CONFIGURATION ---
 st.set_page_config(page_title="Global Stock Screener", layout="wide")
 st.title("📈 Global Stock Screener")
+
+# --- SECRETS & API SETUP ---
+API_KEY = st.secrets.get("ALPHA_VANTAGE_KEY")
+
+if not API_KEY:
+    st.error("⚠️ `ALPHA_VANTAGE_KEY` is missing in Streamlit Secrets. Go to App Settings -> Secrets to add it.")
+    st.stop()
 
 
 # --- CACHED DATA FETCHERS ---
@@ -14,47 +22,44 @@ st.title("📈 Global Stock Screener")
 def get_sp500_tickers():
     """Fetches S&P 500 ticker list from Wikipedia."""
     url = "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies"
-    headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)"}
+    headers = {"User-Agent": "Mozilla/5.0"}
     response = requests.get(url, headers=headers)
     tables = pd.read_html(io.StringIO(response.text))
     df = tables[0]
+    # Return tickers with dots preserved for Alpha Vantage format (e.g. BRK.B)
     return df['Symbol'].tolist()
 
 
-@st.cache_data(ttl=3600)
+@st.cache_data(ttl=86400)
 def get_stock_data(symbol):
-    """Fetches stock history directly from Yahoo Finance endpoints with custom headers."""
-    # Convert symbol formatting if necessary (e.g., BRK.B to BRK-B for Yahoo)
-    formatted_symbol = symbol.replace('.', '-')
+    """
+    Fetches daily stock history using Alpha Vantage.
+    Cached for 24 hours to preserve your free 25 daily API calls.
+    """
+    ts = TimeSeries(key=API_KEY, output_format='pandas')
     
-    url = f"https://query1.finance.yahoo.com/v7/finance/download/{formatted_symbol}?period1=0&period2=9999999999&interval=1d&events=history"
-    headers = {
-        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
-    }
-    
-    response = requests.get(url, headers=headers)
-    
-    if response.status_code != 200:
-        raise ValueError(f"Server returned status code {response.status_code}. Symbol may be invalid.")
+    # Try daily adjusted first, fallback to standard daily
+    try:
+        data, _ = ts.get_daily_adjusted(symbol=symbol)
+    except Exception:
+        data, _ = ts.get_daily(symbol=symbol)
         
-    df = pd.read_csv(io.StringIO(response.text))
+    if data.empty:
+        raise ValueError("No data returned from Alpha Vantage.")
+
+    # Clean up column names (Alpha Vantage returns '1. open', '4. close', etc.)
+    data.columns = [col.split('. ')[-1] for col in data.columns]
     
-    if df.empty or 'Close' not in df.columns:
-        raise ValueError("No price data found for this symbol.")
-        
-    df['Date'] = pd.to_datetime(df['Date'])
-    df.set_index('Date', inplace=True)
-    df.sort_index(ascending=True, inplace=True)
-    
-    # Return last 250 trading days (~1 year)
-    return df.tail(250)
+    # Sort dates chronologically
+    data.sort_index(ascending=True, inplace=True)
+    return data
 
 
-# --- INTERFACE ---
+# --- USER INTERFACE ---
 
 st.sidebar.header("Screener Settings")
 
-# Fetch Tickers
+# Load S&P 500 Ticker Dropdown
 try:
     available_tickers = get_sp500_tickers()
 except Exception:
@@ -64,14 +69,17 @@ selected_ticker = st.sidebar.selectbox("Select Ticker Symbol", available_tickers
 
 st.subheader(f"Data Analysis: {selected_ticker}")
 
-# Fetch & Render Stock Data
+# Process Stock Search
 try:
-    with st.spinner("Loading price history..."):
+    with st.spinner(f"Fetching Alpha Vantage data for {selected_ticker}..."):
         df = get_stock_data(selected_ticker)
         
+        # Identify Close column (handles 'close' or 'adjusted close')
+        close_col = 'adjusted close' if 'adjusted close' in df.columns else 'close'
+        
         # Calculate Key Metrics
-        latest_close = df['Close'].iloc[-1]
-        prev_close = df['Close'].iloc[-2]
+        latest_close = df[close_col].iloc[-1]
+        prev_close = df[close_col].iloc[-2]
         change = latest_close - prev_close
         pct_change = (change / prev_close) * 100
         
@@ -80,9 +88,9 @@ try:
         col2.metric("1-Day Change ($)", f"${change:.2f}")
         col3.metric("1-Day Change (%)", f"{pct_change:.2f}%")
         
-        # Render Price Chart
-        st.write("### 1-Year Price History")
-        st.line_chart(df['Close'])
+        # Plot Stock Price
+        st.write("### Price History")
+        st.line_chart(df[close_col])
         
         # Raw Data Table
         with st.expander("View Raw Historical Data"):
@@ -90,4 +98,8 @@ try:
 
 except Exception as e:
     st.error(f"Could not load data for **{selected_ticker}**.")
-    st.caption(f"Details: {e}")
+    st.info(
+        "**Note:** Free Alpha Vantage keys are limited to 25 requests per day / 5 requests per minute. "
+        "If you recently tested multiple symbols, wait a few minutes or try again tomorrow."
+    )
+    st.caption(f"Error Details: {e}")
