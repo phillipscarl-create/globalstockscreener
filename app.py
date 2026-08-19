@@ -3,7 +3,27 @@ import time
 import pandas as pd
 import requests
 import streamlit as st
-import yfinance as yf
+import streamlit as st
+from alpha_vantage.timeseries import TimeSeries
+
+# 1. Fetch key securely from Streamlit Cloud Secrets
+API_KEY = st.secrets["ALPHA_VANTAGE_KEY"]
+
+# 2. Cache API call (24 hrs = 86400s) to stay well within daily limits
+@st.cache_data(ttl=86400)
+def get_stock_data(symbol):
+    ts = TimeSeries(key=API_KEY, output_format='pandas')
+    data, meta_data = ts.get_daily_adjusted(symbol=symbol)
+    return data
+
+st.title("Stock Price App")
+
+# Example usage
+try:
+    data = get_stock_data("AAPL")
+    st.line_chart(data['4. close'])
+except Exception as e:
+    st.error(f"Error fetching data: {e}")
 
 # Page setup & Configuration
 st.set_page_config(
