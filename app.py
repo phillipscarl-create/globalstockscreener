@@ -30,7 +30,7 @@ def get_sp500_tickers():
     df = tables[0]
     
     # Return list of tickers (cleaning dots for Alpha Vantage format)
-tickers = df['Symbol'].tolist()
+    tickers = df['Symbol'].tolist()
     return tickers
 
 
