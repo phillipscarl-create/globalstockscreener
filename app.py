@@ -6,54 +6,68 @@ import streamlit as st
 import feedparser
 from curl_cffi import requests as impersonate_requests
 
-# Page setup & Configuration
+# Page Configuration
 st.set_page_config(
     page_title="Global Equity Investment Dashboard",
     page_icon="📈",
     layout="wide",
 )
 
-# Custom CSS matching the provided UI image (Deep Slate, Cyan Glow, Curved Cards)
+# Advanced Modern UI CSS (Matching Dark Blue Glassmorphism Design)
 st.markdown(
     """
     <style>
-    /* Global Container Setup */
+    /* Global Base */
     .stApp {
-        background-color: #0b0f19;
+        background: #090d16;
         color: #e2e8f0;
-        font-family: 'Inter', sans-serif;
+        font-family: 'Inter', system-ui, -apple-system, sans-serif;
     }
     
-    /* Top Bar & Titles */
-    h1, h2, h3, h4 {
+    /* Modern Glass Cards */
+    .guide-card {
+        background: rgba(17, 24, 39, 0.7);
+        border: 1px solid rgba(56, 189, 248, 0.2);
+        backdrop-filter: blur(12px);
+        border-radius: 16px;
+        padding: 24px;
+        margin-bottom: 24px;
+        box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+    }
+
+    .metric-card {
+        background: #111827;
+        border: 1px solid #1f2937;
+        border-radius: 12px;
+        padding: 16px;
+        text-align: center;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.2);
+    }
+    
+    .reasoning-card {
+        background: #111827;
+        border: 1px solid #0284c7;
+        border-radius: 12px;
+        padding: 20px;
+        margin-bottom: 16px;
+        box-shadow: 0 0 20px rgba(56, 189, 248, 0.1);
+    }
+    
+    /* Neon Cyan Accent Headings */
+    h1, h2, h3 {
         color: #f8fafc !important;
-        font-weight: 600;
+        font-weight: 700;
         letter-spacing: -0.02em;
     }
     
-    /* Modern Glassmorphic Cards */
-    .user-guide-box, .ui-card {
-        background-color: #111827;
-        border: 1px solid #1f2937;
-        padding: 24px;
-        border-radius: 16px;
-        margin-bottom: 20px;
-        box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.3);
+    h4 {
+        color: #38bdf8 !important;
+        font-weight: 600;
     }
-    
-    /* Active Card Highlight matching UI image */
-    .reasoning-card {
-        background-color: #111827;
-        border: 1px solid #0284c7;
-        border-radius: 14px;
-        padding: 20px;
-        margin-bottom: 16px;
-        box-shadow: 0 0 15px rgba(56, 189, 248, 0.15);
-    }
-    
+
     /* Badges */
     .badge-perfect {
-        background-color: rgba(16, 185, 129, 0.2);
+        background: rgba(16, 185, 129, 0.15);
         color: #34d399;
         border: 1px solid #10b981;
         padding: 4px 12px;
@@ -63,7 +77,7 @@ st.markdown(
     }
     
     .badge-high {
-        background-color: rgba(56, 189, 248, 0.2);
+        background: rgba(56, 189, 248, 0.15);
         color: #38bdf8;
         border: 1px solid #0284c7;
         padding: 4px 12px;
@@ -72,26 +86,32 @@ st.markdown(
         font-size: 0.8rem;
     }
 
-    /* Primary Accent Buttons */
+    /* Buttons */
     .stButton>button {
-        background-color: #38bdf8;
+        background: linear-gradient(135deg, #38bdf8 0%, #0284c7 100%);
         color: #0f172a;
         font-weight: 700;
-        border-radius: 10px;
+        border-radius: 8px;
         border: none;
         padding: 0.6rem 1.5rem;
-        transition: all 0.2s ease-in-out;
+        transition: all 0.3s ease;
     }
     .stButton>button:hover {
-        background-color: #7dd3fc;
-        box-shadow: 0 0 12px rgba(56, 189, 248, 0.4);
-        color: #0f172a;
+        box-shadow: 0 0 15px rgba(56, 189, 248, 0.5);
+        transform: translateY(-1px);
     }
 
-    /* Sidebar Styling */
+    /* Sidebar Background */
     section[data-testid="stSidebar"] {
-        background-color: #0f172a;
+        background-color: #0d1322;
         border-right: 1px solid #1e293b;
+    }
+    
+    /* Table Styling */
+    .stDataFrame {
+        border-radius: 12px;
+        overflow: hidden;
+        border: 1px solid #1e293b;
     }
     </style>
     """,
@@ -101,11 +121,11 @@ st.markdown(
 st.title("📈 Global Equity Investment Model & Institutional Dashboard")
 
 
-# --- SECURE DATA FETCHING FUNCTIONS ---
+# --- BACKEND DATA FUNCTIONS ---
 
 @st.cache_data(ttl=3600)
 def fetch_yahoo_quote(symbol):
-    """Fetches key ticker metrics using browser impersonation."""
+    """Fetches full stock data via chrome-impersonated v10 endpoint."""
     formatted_symbol = symbol.replace(".", "-")
     url = f"https://query2.finance.yahoo.com/v10/finance/quoteSummary/{formatted_symbol}?modules=defaultKeyStatistics,financialData,summaryDetail,price"
     
@@ -173,9 +193,9 @@ def get_ftse100_tickers():
 
 @st.cache_data(ttl=1800)
 def fetch_ticker_rss_news(symbol):
-    """Fetches reliable ticker news via Yahoo RSS Feed."""
+    """Fetches ticker news using Google Finance RSS endpoints."""
     clean_symbol = symbol.replace(".L", "").replace("-", ".")
-    rss_url = f"https://feeds.finance.yahoo.com/rss/2.0/headline?s={clean_symbol}&region=US&lang=en-US"
+    rss_url = f"https://news.google.com/rss/search?q={clean_symbol}+stock&hl=en-US&gl=US&ceid=US:en"
     
     feed = feedparser.parse(rss_url)
     articles = []
@@ -184,7 +204,7 @@ def fetch_ticker_rss_news(symbol):
         articles.append({
             "title": entry.get("title", "News Article"),
             "link": entry.get("link", "#"),
-            "published": entry.get("published", "Recent")
+            "published": entry.get("published", "Recent")[:16]
         })
     return articles
 
@@ -255,23 +275,47 @@ def analyze_stock(ticker_symbol, max_pe, max_pb, max_de, min_cr, min_fcf, min_ro
         return None
 
 
-# --- APP TABS ---
-tab1, tab2 = st.tabs(["🔍 Market Screener", "🏛️ Superinvestor Tracker"])
+# --- APP DASHBOARD ---
+tab1, tab2 = st.tabs(["🔍 Value & Quality Screener", "🏛️ Superinvestor Tracker"])
 
 # ================= TAB 1: SCREENER =================
 with tab1:
+    # RESTORED USER GUIDE
     st.markdown(
         """
-        <div class="user-guide-box">
-            <h3>📖 Quantitative Screener Framework</h3>
-            <p>Scans index constituents across valuation, capital efficiency, leverage, and liquidity factors to score companies from <b>0 to 6</b>.</p>
+        <div class="guide-card">
+            <h3>📖 User Guide & Factor Definitions</h3>
+            <p style="color: #94a3b8; font-size: 0.95rem;">
+                This investment model screens index constituents across valuation, balance sheet health, and return on capital. 
+                Each company is scored out of <b>6 points</b> based on your criteria.
+            </p>
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 12px; margin-top: 15px;">
+                <div style="background: rgba(255,255,255,0.03); padding: 10px 14px; border-radius: 8px;">
+                    <b>P/E Ratio:</b> Valuation relative to net earnings.
+                </div>
+                <div style="background: rgba(255,255,255,0.03); padding: 10px 14px; border-radius: 8px;">
+                    <b>P/B Ratio:</b> Price relative to net asset value.
+                </div>
+                <div style="background: rgba(255,255,255,0.03); padding: 10px 14px; border-radius: 8px;">
+                    <b>Debt/Equity:</b> Financial leverage safety threshold.
+                </div>
+                <div style="background: rgba(255,255,255,0.03); padding: 10px 14px; border-radius: 8px;">
+                    <b>Current Ratio:</b> Short-term liquid buffer (> 1.0).
+                </div>
+                <div style="background: rgba(255,255,255,0.03); padding: 10px 14px; border-radius: 8px;">
+                    <b>FCF Yield:</b> Real cash flow generation vs. price.
+                </div>
+                <div style="background: rgba(255,255,255,0.03); padding: 10px 14px; border-radius: 8px;">
+                    <b>ROE (%):</b> Capital compound efficiency efficiency.
+                </div>
+            </div>
         </div>
         """,
         unsafe_allow_html=True,
     )
 
-    st.sidebar.header("1. Market Selection")
-    market = st.sidebar.selectbox("Choose Index", ["S&P 500 (US)", "Nasdaq-100 (US Growth)", "Dow Jones (US Blue Chip)", "FTSE 100 (UK)"])
+    st.sidebar.header("1. Select Market Index")
+    market = st.sidebar.selectbox("Market Index", ["S&P 500 (US)", "Nasdaq-100 (US Growth)", "Dow Jones (US)", "FTSE 100 (UK)"])
     scan_limit = st.sidebar.number_input("Number of stocks to scan", min_value=5, max_value=500, value=20, step=5)
 
     st.sidebar.header("2. Model Thresholds")
@@ -310,7 +354,7 @@ with tab1:
         if not df.empty:
             df_sorted = df.sort_values(by="Raw Score", ascending=False)
 
-            st.subheader("📊 Scan Results")
+            st.subheader("📊 Model Scan Results")
             display_df = df_sorted.drop(columns=["Raw Score", "Reasons"])
             st.dataframe(display_df, use_container_width=True)
 
@@ -320,7 +364,7 @@ with tab1:
             if top_performers:
                 for stock in sorted(top_performers, key=lambda x: x["Raw Score"], reverse=True):
                     badge_class = "badge-perfect" if stock["Raw Score"] == 6 else "badge-high"
-                    badge_label = "PERFECT SCORE (6/6)" if stock["Raw Score"] == 6 else "HIGH CONVICTION (5/6)"
+                    badge_label = "PERFECT MATCH (6/6)" if stock["Raw Score"] == 6 else "HIGH CONVICTION (5/6)"
 
                     st.markdown(
                         f"""
@@ -329,7 +373,7 @@ with tab1:
                                 <h4><b>{stock['Name']} ({stock['Ticker']})</b></h4>
                                 <span class="{badge_class}">{badge_label}</span>
                             </div>
-                            <ul style="margin-top: 10px;">
+                            <ul style="margin-top: 10px; color: #cbd5e1;">
                                 {"".join([f"<li>{r}</li>" for r in stock['Reasons']])}
                             </ul>
                         </div>
@@ -340,7 +384,7 @@ with tab1:
                 st.info("No stocks met 5/6 or 6/6 criteria under these limits.")
 
             csv = display_df.to_csv(index=False).encode("utf-8")
-            st.download_button("📥 Download Results (CSV)", data=csv, file_name="screener_results.csv", mime="text/csv")
+            st.download_button("📥 Download Results as CSV", data=csv, file_name="screener_results.csv", mime="text/csv")
 
 # ================= TAB 2: SUPERINVESTOR TRACKER =================
 with tab2:
@@ -362,27 +406,40 @@ with tab2:
     col1, col2 = st.columns([3, 2])
 
     with col1:
-        st.subheader(f"Portfolio Summary")
+        st.subheader("Portfolio Holdings Summary")
         portfolio_data = []
+        
         for ticker in tickers_to_track:
             q = fetch_yahoo_quote(ticker)
             if q:
                 sum_d = q.get("summaryDetail", {})
                 price = q.get("price", {})
 
+                px = price.get("regularMarketPrice", {}).get("raw")
+                pe = sum_d.get("trailingPE", {}).get("raw")
+                mc = price.get("marketCap", {}).get("raw")
+
                 portfolio_data.append({
                     "Ticker": ticker,
                     "Company": price.get("shortName", ticker),
-                    "Price": f"${price.get('regularMarketPrice', {}).get('raw', 0):,.2f}",
-                    "P/E Ratio": round(sum_d.get("trailingPE", {}).get("raw", 0), 2) if sum_d.get("trailingPE") else "N/A",
-                    "Market Cap ($B)": round(price.get("marketCap", {}).get("raw", 0) / 1e9, 2) if price.get("marketCap") else "N/A",
+                    "Price": f"${px:,.2f}" if px else "N/A",
+                    "P/E Ratio": round(pe, 2) if pe else "N/A",
+                    "Market Cap ($B)": f"${round(mc / 1e9, 2)}B" if mc else "N/A",
+                })
+            else:
+                portfolio_data.append({
+                    "Ticker": ticker,
+                    "Company": ticker,
+                    "Price": "N/A",
+                    "P/E Ratio": "N/A",
+                    "Market Cap ($B)": "N/A"
                 })
 
         if portfolio_data:
             st.dataframe(pd.DataFrame(portfolio_data), use_container_width=True)
 
     with col2:
-        st.subheader(f"Live RSS News Feed")
+        st.subheader("Live Holdings News")
         primary_ticker = tickers_to_track[0]
         st.caption(f"Showing headline updates for primary holding: **{primary_ticker}**")
         
@@ -391,9 +448,9 @@ with tab2:
             for item in articles:
                 st.markdown(
                     f"""
-                    <div class="ui-card" style="padding: 12px; margin-bottom: 10px;">
-                        <a href="{item['link']}" target="_blank" style="color: #38bdf8; text-decoration: none; font-weight: 600;">{item['title']}</a>
-                        <div style="color: #64748b; font-size: 0.75rem; margin-top: 4px;">{item['published']}</div>
+                    <div style="background: #111827; border: 1px solid #1f2937; padding: 14px; border-radius: 10px; margin-bottom: 10px;">
+                        <a href="{item['link']}" target="_blank" style="color: #38bdf8; text-decoration: none; font-weight: 600; font-size: 0.95rem;">{item['title']}</a>
+                        <div style="color: #64748b; font-size: 0.75rem; margin-top: 6px;">Published: {item['published']}</div>
                     </div>
                     """,
                     unsafe_allow_html=True
