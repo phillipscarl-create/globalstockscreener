@@ -1,5 +1,3 @@
-streamlit
-yfinance
-pandas
-requests
-lxml
+streamlit==1.38.0
+pandas==2.2.2
+alpha_vantage==2.3.1
