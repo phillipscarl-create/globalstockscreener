@@ -11,7 +11,7 @@ st.set_page_config(
     layout="wide",
 )
 
-# Custom CSS: Decreased font size by 2pts, fixed line-height/overlapping layout bugs
+# Custom CSS: Decreased font size by 2pts, clean styling
 st.markdown(
     """
     <style>
@@ -32,24 +32,6 @@ st.markdown(
     .stApp {
         background-color: #0b0f19;
         color: #e2e8f0;
-    }
-    
-    /* Modern Dark Glass Cards */
-    .guide-card, .ui-card {
-        background-color: #111827;
-        border: 1px solid #1f2937;
-        padding: 20px;
-        border-radius: 12px;
-        margin-bottom: 20px;
-        box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.4);
-    }
-    
-    .factor-box {
-        background: rgba(255, 255, 255, 0.02);
-        border: 1px solid #374151;
-        padding: 14px;
-        border-radius: 8px;
-        margin-bottom: 10px;
     }
 
     .reasoning-card {
@@ -223,67 +205,54 @@ tab1, tab2 = st.tabs(["🔍 Quantitative Screener", "🏛️ Superinvestor Track
 
 # ================= TAB 1: SCREENER =================
 with tab1:
-    # Replaced native expander with clean card wrapper to prevent overlapping layout bugs
-    st.markdown(
-        """
-        <div class="guide-card">
-            <h3>📖 User Guide & Academic Research Framework</h3>
-            <p style="color: #94a3b8; margin-top: 8px;">
-                This quantitative engine ranks public companies using a multi-factor scoring algorithm (0 to 6). 
-                Each factor isolates specific fundamental drivers proved by academic finance and value investing literature to deliver alpha over full market cycles.
-            </p>
-            
-            <div class="factor-box" style="margin-top: 15px;">
-                <h4>1. Price-to-Earnings Ratio (P/E) — Value Anomaly</h4>
-                <p style="color: #cbd5e1;">
-                    <b>Importance:</b> Evaluates valuation relative to bottom-line profitability.<br>
-                    <b>Academic Foundation:</b> Basu (1977, <i>Journal of Finance</i>) established the "P/E Anomaly," demonstrating that low P/E stocks consistently outperform high P/E stocks.
-                </p>
-            </div>
+    # Clean Native Streamlit User Guide Container
+    with st.container(border=True):
+        st.subheader("📖 User Guide & Academic Research Framework")
+        st.write(
+            "This quantitative engine ranks public companies using a multi-factor scoring algorithm (0 to 6). "
+            "Each factor isolates specific fundamental drivers proved by academic finance and value investing literature to deliver alpha over full market cycles."
+        )
+        st.divider()
 
-            <div class="factor-box">
-                <h4>2. Price-to-Book Ratio (P/B) — The Fama-French Value Factor</h4>
-                <p style="color: #cbd5e1;">
-                    <b>Importance:</b> Compares market value directly against corporate net asset value.<br>
-                    <b>Academic Foundation:</b> Fama & French (1992, 1993, <i>Journal of Financial Economics</i>) introduced the High-Minus-Low (HML) factor, proving that low P/B equities generate excess returns.
-                </p>
-            </div>
+        factors = [
+            {
+                "title": "1. Price-to-Earnings Ratio (P/E) — Value Anomaly",
+                "importance": "Evaluates valuation relative to bottom-line profitability.",
+                "research": "Basu (1977, Journal of Finance) established the 'P/E Anomaly,' demonstrating that low P/E stocks consistently outperform high P/E stocks."
+            },
+            {
+                "title": "2. Price-to-Book Ratio (P/B) — The Fama-French Value Factor",
+                "importance": "Compares market value directly against corporate net asset value.",
+                "research": "Fama & French (1992, 1993, Journal of Financial Economics) introduced the High-Minus-Low (HML) factor, proving low P/B equities generate excess returns."
+            },
+            {
+                "title": "3. Debt-to-Equity Ratio (D/E) — Solvency & Insolvency Shield",
+                "importance": "Measures long-term capital leverage and financial vulnerability.",
+                "research": "Joseph Piotroski (2000, Journal of Accounting Research) integrated leverage trends into fundamental scoring, showing leverage limits eliminate value-traps and bankruptcy risk."
+            },
+            {
+                "title": "4. Current Ratio — Liquidity & Operational Runway",
+                "importance": "Short-term liquidity buffer (Current Assets ÷ Current Liabilities).",
+                "research": "Credit rating models (Altman Z-Score framework) prioritize liquidity ratios above 1.0 to ensure short-term debts do not force distressed dilution."
+            },
+            {
+                "title": "5. Free Cash Flow (FCF) Yield — Pure Owner Earnings",
+                "importance": "Real cash generated after capital expenditures divided by market capitalization.",
+                "research": "Joel Greenblatt’s Magic Formula and Warren Buffett’s owner earnings emphasize that accounting earnings can be manipulated, but cash flows cannot."
+            },
+            {
+                "title": "6. Return on Equity (ROE) — Capital Efficiency & Economic Moats",
+                "importance": "Profitability generated per dollar of shareholder equity capital.",
+                "research": "Novy-Marx (2013, Journal of Financial Economics) demonstrated that high profitability/quality stocks generate significant alpha ('Quality-minus-Junk')."
+            }
+        ]
 
-            <div class="factor-box">
-                <h4>3. Debt-to-Equity Ratio (D/E) — Solvency & Insolvency Shield</h4>
-                <p style="color: #cbd5e1;">
-                    <b>Importance:</b> Measures long-term capital leverage and financial vulnerability.<br>
-                    <b>Academic Foundation:</b> Joseph Piotroski (2000, <i>Journal of Accounting Research</i>) integrated leverage trends into fundamental scoring, showing leverage limits eliminate value-traps and bankruptcy risk.
-                </p>
-            </div>
-
-            <div class="factor-box">
-                <h4>4. Current Ratio — Liquidity & Operational Runway</h4>
-                <p style="color: #cbd5e1;">
-                    <b>Importance:</b> Short-term liquidity buffer (Current Assets ÷ Current Liabilities).<br>
-                    <b>Academic Foundation:</b> Credit rating models (Altman Z-Score framework) prioritize liquidity ratios above 1.0 to ensure short-term debts do not force distressed dilution.
-                </p>
-            </div>
-
-            <div class="factor-box">
-                <h4>5. Free Cash Flow (FCF) Yield — Pure Owner Earnings</h4>
-                <p style="color: #cbd5e1;">
-                    <b>Importance:</b> Real cash generated after capital expenditures divided by market capitalization.<br>
-                    <b>Academic Foundation:</b> Joel Greenblatt’s <i>Magic Formula</i> and Warren Buffett’s owner earnings emphasize that accounting earnings can be manipulated, but cash flows cannot.
-                </p>
-            </div>
-
-            <div class="factor-box">
-                <h4>6. Return on Equity (ROE) — Capital Efficiency & Economic Moats</h4>
-                <p style="color: #cbd5e1;">
-                    <b>Importance:</b> Profitability generated per dollar of shareholder equity capital.<br>
-                    <b>Academic Foundation:</b> Novy-Marx (2013, <i>Journal of Financial Economics</i>) demonstrated that high profitability/quality stocks generate significant alpha ("Quality-minus-Junk").
-                </p>
-            </div>
-        </div>
-        """,
-        unsafe_allow_html=True,
-    )
+        for item in factors:
+            with st.container():
+                st.markdown(f"#### {item['title']}")
+                st.markdown(f"**Importance:** {item['importance']}")
+                st.markdown(f"**Academic Foundation:** {item['research']}")
+                st.write("")
 
     st.sidebar.header("1. Select Market Index")
     market = st.sidebar.selectbox("Market Index", ["S&P 500 (US)", "Nasdaq-100 (US Growth)", "Dow Jones (US)", "FTSE 100 (UK)"])
