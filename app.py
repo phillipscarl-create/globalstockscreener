@@ -10,6 +10,15 @@ st.title("📈 Global Stock Screener")
 
 # --- SECRETS & API SETUP ---
 API_KEY = st.secrets.get("L1FUDEKZCUN8OIY5")
+# Fetches the key whether it was saved as top-level OR under [general]
+API_KEY = (
+    st.secrets.get("ALPHA_VANTAGE_KEY") 
+    or st.secrets.get("general", {}).get("ALPHA_VANTAGE_KEY")
+)
+
+if not API_KEY:
+    st.error("⚠️ `ALPHA_VANTAGE_KEY` is missing in Streamlit Secrets. Go to App Settings -> Secrets to add it.")
+    st.stop()
 
 if not API_KEY:
     st.error("⚠️ `ALPHA_VANTAGE_KEY` is missing in Streamlit Secrets. Go to App Settings -> Secrets to add it.")
