@@ -3,7 +3,6 @@ import time
 import pandas as pd
 import requests
 import streamlit as st
-import streamlit as st
 from alpha_vantage.timeseries import TimeSeries
 
 # 1. Fetch key securely from Streamlit Cloud Secrets
