@@ -9,7 +9,7 @@ st.set_page_config(page_title="Global Stock Screener", layout="wide")
 st.title("📈 Global Stock Screener")
 
 # --- SECRETS & API SETUP ---
-API_KEY = st.secrets.get("ALPHA_VANTAGE_KEY")
+API_KEY = st.secrets.get("L1FUDEKZCUN8OIY5")
 
 if not API_KEY:
     st.error("⚠️ `ALPHA_VANTAGE_KEY` is missing in Streamlit Secrets. Go to App Settings -> Secrets to add it.")
