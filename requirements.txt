@@ -1,3 +1,4 @@
 streamlit
 pandas
 alpha_vantage
+lxml
