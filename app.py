@@ -5,15 +5,29 @@ import requests
 import streamlit as st
 from alpha_vantage.timeseries import TimeSeries
 
-# 1. Fetch key securely from Streamlit Cloud Secrets
-API_KEY = st.secrets["L1FUDEKZCUN8OIY5"]
+import streamlit as st
+from alpha_vantage.timeseries import TimeSeries
 
-# 2. Cache API call (24 hrs = 86400s) to stay well within daily limits
+# Safely fetch the key from st.secrets
+API_KEY = st.secrets.get("ALPHA_VANTAGE_KEY")
+
+if not API_KEY:
+    st.error("API Key not found! Make sure ALPHA_VANTAGE_KEY is defined in Streamlit Secrets.")
+    st.stop()
+
 @st.cache_data(ttl=86400)
 def get_stock_data(symbol):
     ts = TimeSeries(key=API_KEY, output_format='pandas')
-    data, meta_data = ts.get_daily_adjusted(symbol=symbol)
+    data, _ = ts.get_daily_adjusted(symbol=symbol)
     return data
+
+st.title("Global Stock Screener")
+
+try:
+    df = get_stock_data("AAPL")
+    st.line_chart(df['4. close'])
+except Exception as e:
+    st.error(f"Error fetching data: {e}")
 
 st.title("Stock Price App")
 
