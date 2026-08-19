@@ -463,7 +463,7 @@ with tab2:
     portfolio_data = []
     for ticker in tickers_to_track:
        df = get_stock_data(ticker)
-        info = t.info
+    info = t.info
         portfolio_data.append(
             {
                 "Ticker": ticker,
