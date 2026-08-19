@@ -1,6 +1,4 @@
 streamlit
 pandas
-requests
-curl_cffi
-lxml
+yfinance
 feedparser
