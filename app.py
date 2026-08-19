@@ -6,6 +6,7 @@ import streamlit as st
 from alpha_vantage.timeseries import TimeSeries
 
 # 1. Fetch key securely from Streamlit Cloud Secrets
+# INCORRECT (looks for a secret literally named L1FUDEKZCUN8OIY5)
 API_KEY = st.secrets["L1FUDEKZCUN8OIY5"]
 
 # 2. Cache API call (24 hrs = 86400s) to stay well within daily limits
