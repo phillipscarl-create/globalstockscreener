@@ -3,3 +3,4 @@ pandas
 requests
 curl_cffi
 lxml
+feedparser
