@@ -2,27 +2,21 @@ import io
 import requests
 import pandas as pd
 import streamlit as st
-from alpha_vantage.timeseries import TimeSeries
+from datetime import datetime, timedelta
+from polygon import RESTClient
 
 # --- PAGE CONFIGURATION ---
 st.set_page_config(page_title="Global Stock Screener", layout="wide")
 st.title("📈 Global Stock Screener")
 
 # --- SECRETS & API SETUP ---
-API_KEY = st.secrets.get("L1FUDEKZCUN8OIY5")
-# Fetches the key whether it was saved as top-level OR under [general]
-API_KEY = (
-    st.secrets.get("ALPHA_VANTAGE_KEY") 
-    or st.secrets.get("general", {}).get("ALPHA_VANTAGE_KEY")
-)
+API_KEY = st.secrets.get("POLYGON_KEY") or st.secrets.get("general", {}).get("POLYGON_KEY")
 
 if not API_KEY:
-    st.error("⚠️ `ALPHA_VANTAGE_KEY` is missing in Streamlit Secrets. Go to App Settings -> Secrets to add it.")
+    st.error("⚠️ `POLYGON_KEY` is missing in Streamlit Secrets. Go to App Settings -> Secrets to add it.")
     st.stop()
 
-if not API_KEY:
-    st.error("⚠️ `ALPHA_VANTAGE_KEY` is missing in Streamlit Secrets. Go to App Settings -> Secrets to add it.")
-    st.stop()
+client = RESTClient(api_key=API_KEY)
 
 
 # --- CACHED DATA FETCHERS ---
@@ -35,40 +29,51 @@ def get_sp500_tickers():
     response = requests.get(url, headers=headers)
     tables = pd.read_html(io.StringIO(response.text))
     df = tables[0]
-    # Return tickers with dots preserved for Alpha Vantage format (e.g. BRK.B)
     return df['Symbol'].tolist()
 
 
-@st.cache_data(ttl=86400)
+@st.cache_data(ttl=3600)
 def get_stock_data(symbol):
-    """
-    Fetches daily stock history using Alpha Vantage.
-    Cached for 24 hours to preserve your free 25 daily API calls.
-    """
-    ts = TimeSeries(key=API_KEY, output_format='pandas')
+    """Fetches 1 year of daily historical prices from Polygon.io."""
+    # Convert symbol formatting for Polygon (e.g. BRK.B to BRK.B)
+    formatted_symbol = symbol.replace('-', '.')
     
-    # Try daily adjusted first, fallback to standard daily
-    try:
-        data, _ = ts.get_daily_adjusted(symbol=symbol)
-    except Exception:
-        data, _ = ts.get_daily(symbol=symbol)
+    # Calculate date range for past 1 year
+    to_date = datetime.now().strftime("%Y-%m-%d")
+    from_date = (datetime.now() - timedelta(days=365)).strftime("%Y-%m-%d")
+    
+    aggs = []
+    for agg in client.list_aggs(
+        ticker=formatted_symbol,
+        multiplier=1,
+        timespan="day",
+        from_=from_date,
+        to=to_date,
+        limit=5000
+    ):
+        aggs.append({
+            "Date": pd.to_datetime(agg.timestamp, unit="ms"),
+            "Open": agg.open,
+            "High": agg.high,
+            "Low": agg.low,
+            "Close": agg.close,
+            "Volume": agg.volume
+        })
         
-    if data.empty:
-        raise ValueError("No data returned from Alpha Vantage.")
-
-    # Clean up column names (Alpha Vantage returns '1. open', '4. close', etc.)
-    data.columns = [col.split('. ')[-1] for col in data.columns]
-    
-    # Sort dates chronologically
-    data.sort_index(ascending=True, inplace=True)
-    return data
+    if not aggs:
+        raise ValueError(f"No price data returned for {symbol}.")
+        
+    df = pd.DataFrame(aggs)
+    df.set_index("Date", inplace=True)
+    df.sort_index(ascending=True, inplace=True)
+    return df
 
 
 # --- USER INTERFACE ---
 
 st.sidebar.header("Screener Settings")
 
-# Load S&P 500 Ticker Dropdown
+# Ticker Selection
 try:
     available_tickers = get_sp500_tickers()
 except Exception:
@@ -78,17 +83,14 @@ selected_ticker = st.sidebar.selectbox("Select Ticker Symbol", available_tickers
 
 st.subheader(f"Data Analysis: {selected_ticker}")
 
-# Process Stock Search
+# Fetch & Render Stock Data
 try:
-    with st.spinner(f"Fetching Alpha Vantage data for {selected_ticker}..."):
+    with st.spinner(f"Loading Polygon data for {selected_ticker}..."):
         df = get_stock_data(selected_ticker)
         
-        # Identify Close column (handles 'close' or 'adjusted close')
-        close_col = 'adjusted close' if 'adjusted close' in df.columns else 'close'
-        
-        # Calculate Key Metrics
-        latest_close = df[close_col].iloc[-1]
-        prev_close = df[close_col].iloc[-2]
+        # Key Metrics
+        latest_close = df['Close'].iloc[-1]
+        prev_close = df['Close'].iloc[-2]
         change = latest_close - prev_close
         pct_change = (change / prev_close) * 100
         
@@ -97,21 +99,14 @@ try:
         col2.metric("1-Day Change ($)", f"${change:.2f}")
         col3.metric("1-Day Change (%)", f"{pct_change:.2f}%")
         
-        # Plot Stock Price
-        st.write("### Price History")
-        st.line_chart(df[close_col])
+        # Price Chart
+        st.write("### 1-Year Price History")
+        st.line_chart(df['Close'])
         
-        # Raw Data Table
+        # Data Table
         with st.expander("View Raw Historical Data"):
             st.dataframe(df.sort_index(ascending=False))
 
 except Exception as e:
     st.error(f"Could not load data for **{selected_ticker}**.")
-    st.warning(
-        "**Possible Causes:**\n"
-        "1. **25 Calls/Day Limit:** Alpha Vantage free tier allows only 25 requests daily.\n"
-        "2. **Rate Limit:** More than 5 requests were sent in 1 minute.\n"
-        "3. **Key Error:** The API key is invalid or pending activation."
-    )
-    # Prints the actual technical detail from Alpha Vantage
-    st.code(f"Detailed Error: {e}")
+    st.caption(f"Error Details: {e}")
