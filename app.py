@@ -11,14 +11,22 @@ st.set_page_config(
     layout="wide",
 )
 
-# Custom CSS matching Courier Font & Dark Blue Glassmorphism Theme
+# Custom CSS: Decreased font size by 2pts, fixed line-height/overlapping layout bugs
 st.markdown(
     """
     <style>
-    /* Global Font Override to Courier */
-    html, body, [class*="css"], .stApp, h1, h2, h3, h4, h5, h6, p, div, span, label, button, input, table {
+    /* Global Font Override to Courier - Decreased size by ~2 points */
+    html, body, [class*="css"], .stApp, p, div, span, label, button, input, table {
         font-family: 'Courier New', Courier, monospace !important;
+        font-size: 13px !important;
+        line-height: 1.4 !important;
     }
+
+    /* Adjusted Heading Sizes Downwards */
+    h1 { font-size: 24px !important; }
+    h2 { font-size: 20px !important; }
+    h3 { font-size: 16px !important; }
+    h4 { font-size: 14px !important; color: #38bdf8 !important; }
 
     /* Container Styling */
     .stApp {
@@ -30,7 +38,7 @@ st.markdown(
     .guide-card, .ui-card {
         background-color: #111827;
         border: 1px solid #1f2937;
-        padding: 24px;
+        padding: 20px;
         border-radius: 12px;
         margin-bottom: 20px;
         box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.4);
@@ -39,28 +47,18 @@ st.markdown(
     .factor-box {
         background: rgba(255, 255, 255, 0.02);
         border: 1px solid #374151;
-        padding: 16px;
+        padding: 14px;
         border-radius: 8px;
-        margin-bottom: 12px;
+        margin-bottom: 10px;
     }
 
     .reasoning-card {
         background-color: #111827;
         border: 1px solid #38bdf8;
         border-radius: 12px;
-        padding: 18px;
-        margin-bottom: 16px;
+        padding: 16px;
+        margin-bottom: 14px;
         box-shadow: 0 0 12px rgba(56, 189, 248, 0.2);
-    }
-    
-    /* Neon Accents */
-    h1, h2, h3 {
-        color: #f8fafc !important;
-        font-weight: 700;
-    }
-    
-    h4 {
-        color: #38bdf8 !important;
     }
 
     /* Badges */
@@ -68,20 +66,20 @@ st.markdown(
         background-color: rgba(16, 185, 129, 0.2);
         color: #34d399;
         border: 1px solid #10b981;
-        padding: 4px 10px;
+        padding: 3px 8px;
         border-radius: 4px;
         font-weight: bold;
-        font-size: 0.8rem;
+        font-size: 11px !important;
     }
     
     .badge-high {
         background-color: rgba(56, 189, 248, 0.2);
         color: #38bdf8;
         border: 1px solid #0284c7;
-        padding: 4px 10px;
+        padding: 3px 8px;
         border-radius: 4px;
         font-weight: bold;
-        font-size: 0.8rem;
+        font-size: 11px !important;
     }
 
     /* Primary Accent Buttons */
@@ -91,7 +89,7 @@ st.markdown(
         font-weight: bold;
         border-radius: 6px;
         border: none;
-        padding: 0.6rem 1.5rem;
+        padding: 0.5rem 1.2rem;
     }
     .stButton>button:hover {
         background-color: #7dd3fc;
@@ -225,73 +223,67 @@ tab1, tab2 = st.tabs(["🔍 Quantitative Screener", "🏛️ Superinvestor Track
 
 # ================= TAB 1: SCREENER =================
 with tab1:
-    with st.expander("📖 EXPANDED USER GUIDE & ACADEMIC RESEARCH FRAMEWORK", expanded=True):
-        st.markdown(
-            """
-            <div class="guide-card">
-                <h3>System Architecture & Research Foundations</h3>
-                <p style="color: #94a3b8;">
-                    This quantitative engine ranks public companies using a multi-factor scoring algorithm (0 to 6). 
-                    Each factor isolates specific fundamental drivers proved by academic finance and value investing literature to deliver risk-adjusted alpha over full market cycles.
+    # Replaced native expander with clean card wrapper to prevent overlapping layout bugs
+    st.markdown(
+        """
+        <div class="guide-card">
+            <h3>📖 User Guide & Academic Research Framework</h3>
+            <p style="color: #94a3b8; margin-top: 8px;">
+                This quantitative engine ranks public companies using a multi-factor scoring algorithm (0 to 6). 
+                Each factor isolates specific fundamental drivers proved by academic finance and value investing literature to deliver alpha over full market cycles.
+            </p>
+            
+            <div class="factor-box" style="margin-top: 15px;">
+                <h4>1. Price-to-Earnings Ratio (P/E) — Value Anomaly</h4>
+                <p style="color: #cbd5e1;">
+                    <b>Importance:</b> Evaluates valuation relative to bottom-line profitability.<br>
+                    <b>Academic Foundation:</b> Basu (1977, <i>Journal of Finance</i>) established the "P/E Anomaly," demonstrating that low P/E stocks consistently outperform high P/E stocks.
                 </p>
-                
-                <div class="factor-box">
-                    <h4>1. Price-to-Earnings Ratio (P/E) — Value Anomaly</h4>
-                    <p style="color: #cbd5e1; font-size: 0.88rem;">
-                        <b>Importance:</b> Evaluates valuation relative to bottom-line profitability.<br>
-                        <b>Academic Foundation:</b> Basu (1977, <i>Journal of Finance</i>) established the "P/E Anomaly," demonstrating that low P/E stocks consistently outperform high P/E stocks on a risk-adjusted basis.<br>
-                        <b>Threshold Logic:</b> Eliminates speculative growth equities trading at inflated multiples.
-                    </p>
-                </div>
-
-                <div class="factor-box">
-                    <h4>2. Price-to-Book Ratio (P/B) — The Fama-French Value Factor</h4>
-                    <p style="color: #cbd5e1; font-size: 0.88rem;">
-                        <b>Importance:</b> Compares market value directly against corporate net asset value.<br>
-                        <b>Academic Foundation:</b> Fama & French (1992, 1993, <i>Journal of Financial Economics</i>) introduced the High-Minus-Low (HML) factor, proving that low P/B equities systematically generate excess returns across global equities.<br>
-                        <b>Threshold Logic:</b> Filters for margin-of-safety asset protection inspired by Benjamin Graham's <i>Security Analysis</i>.
-                    </p>
-                </div>
-
-                <div class="factor-box">
-                    <h4>3. Debt-to-Equity Ratio (D/E) — Solvency & Insolvency Shield</h4>
-                    <p style="color: #cbd5e1; font-size: 0.88rem;">
-                        <b>Importance:</b> Measures long-term capital leverage and financial vulnerability.<br>
-                        <b>Academic Foundation:</b> Joseph Piotroski (2000, <i>Journal of Accounting Research</i>) integrated leverage trends into the F-Score, showing that leverage constraints eliminate value-traps and bankruptcy risk.<br>
-                        <b>Threshold Logic:</b> Shields portfolios from sudden rate increases and credit contraction.
-                    </p>
-                </div>
-
-                <div class="factor-box">
-                    <h4>4. Current Ratio — Liquidity & Operational Runway</h4>
-                    <p style="color: #cbd5e1; font-size: 0.88rem;">
-                        <b>Importance:</b> Short-term liquidity buffer (Current Assets ÷ Current Liabilities).<br>
-                        <b>Academic Foundation:</b> Standard credit rating models (Altman Z-Score) prioritize liquidity ratios above 1.0 to ensure short-term obligations do not force distressed equity dilution.<br>
-                        <b>Threshold Logic:</b> Confirms the business can comfortably service near-term debt without issuing equity.
-                    </p>
-                </div>
-
-                <div class="factor-box">
-                    <h4>5. Free Cash Flow (FCF) Yield — Pure Owner Earnings</h4>
-                    <p style="color: #cbd5e1; font-size: 0.88rem;">
-                        <b>Importance:</b> Real cash generated after capital expenditures divided by market capitalization.<br>
-                        <b>Academic Foundation:</b> Joel Greenblatt’s <i>Magic Formula</i> and Warren Buffett’s "Owner Earnings" framework emphasize that accrual accounting earnings can be manipulated, but cash flow cannot.<br>
-                        <b>Threshold Logic:</b> Selects companies generating tangible cash returns available for buybacks, dividends, or reinvestment.
-                    </p>
-                </div>
-
-                <div class="factor-box">
-                    <h4>6. Return on Equity (ROE) — Capital Efficiency & Moat</h4>
-                    <p style="color: #cbd5e1; font-size: 0.88rem;">
-                        <b>Importance:</b> Profitability generated per dollar of shareholder equity capital.<br>
-                        <b>Academic Foundation:</b> Novy-Marx (2013, <i>Journal of Financial Economics</i>) demonstrated that high-profitability/quality stocks generate significant alpha ("Quality-minus-Junk").<br>
-                        <b>Threshold Logic:</b> Identifies businesses possess persistent economic moats and pricing power.
-                    </p>
-                </div>
             </div>
-            """,
-            unsafe_allow_html=True,
-        )
+
+            <div class="factor-box">
+                <h4>2. Price-to-Book Ratio (P/B) — The Fama-French Value Factor</h4>
+                <p style="color: #cbd5e1;">
+                    <b>Importance:</b> Compares market value directly against corporate net asset value.<br>
+                    <b>Academic Foundation:</b> Fama & French (1992, 1993, <i>Journal of Financial Economics</i>) introduced the High-Minus-Low (HML) factor, proving that low P/B equities generate excess returns.
+                </p>
+            </div>
+
+            <div class="factor-box">
+                <h4>3. Debt-to-Equity Ratio (D/E) — Solvency & Insolvency Shield</h4>
+                <p style="color: #cbd5e1;">
+                    <b>Importance:</b> Measures long-term capital leverage and financial vulnerability.<br>
+                    <b>Academic Foundation:</b> Joseph Piotroski (2000, <i>Journal of Accounting Research</i>) integrated leverage trends into fundamental scoring, showing leverage limits eliminate value-traps and bankruptcy risk.
+                </p>
+            </div>
+
+            <div class="factor-box">
+                <h4>4. Current Ratio — Liquidity & Operational Runway</h4>
+                <p style="color: #cbd5e1;">
+                    <b>Importance:</b> Short-term liquidity buffer (Current Assets ÷ Current Liabilities).<br>
+                    <b>Academic Foundation:</b> Credit rating models (Altman Z-Score framework) prioritize liquidity ratios above 1.0 to ensure short-term debts do not force distressed dilution.
+                </p>
+            </div>
+
+            <div class="factor-box">
+                <h4>5. Free Cash Flow (FCF) Yield — Pure Owner Earnings</h4>
+                <p style="color: #cbd5e1;">
+                    <b>Importance:</b> Real cash generated after capital expenditures divided by market capitalization.<br>
+                    <b>Academic Foundation:</b> Joel Greenblatt’s <i>Magic Formula</i> and Warren Buffett’s owner earnings emphasize that accounting earnings can be manipulated, but cash flows cannot.
+                </p>
+            </div>
+
+            <div class="factor-box">
+                <h4>6. Return on Equity (ROE) — Capital Efficiency & Economic Moats</h4>
+                <p style="color: #cbd5e1;">
+                    <b>Importance:</b> Profitability generated per dollar of shareholder equity capital.<br>
+                    <b>Academic Foundation:</b> Novy-Marx (2013, <i>Journal of Financial Economics</i>) demonstrated that high profitability/quality stocks generate significant alpha ("Quality-minus-Junk").
+                </p>
+            </div>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
 
     st.sidebar.header("1. Select Market Index")
     market = st.sidebar.selectbox("Market Index", ["S&P 500 (US)", "Nasdaq-100 (US Growth)", "Dow Jones (US)", "FTSE 100 (UK)"])
@@ -426,8 +418,8 @@ with tab2:
                 st.markdown(
                     f"""
                     <div style="background: #111827; border: 1px solid #1f2937; padding: 12px; border-radius: 8px; margin-bottom: 10px;">
-                        <a href="{item['link']}" target="_blank" style="color: #38bdf8; text-decoration: none; font-weight: bold; font-size: 0.9rem;">{item['title']}</a>
-                        <div style="color: #64748b; font-size: 0.75rem; margin-top: 4px;">Published: {item['published']}</div>
+                        <a href="{item['link']}" target="_blank" style="color: #38bdf8; text-decoration: none; font-weight: bold;">{item['title']}</a>
+                        <div style="color: #64748b; font-size: 11px; margin-top: 4px;">Published: {item['published']}</div>
                     </div>
                     """,
                     unsafe_allow_html=True
